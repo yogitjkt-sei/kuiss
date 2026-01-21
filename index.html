@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Trivia Multiplayer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .lobby-screen, .game-screen, .result-screen {
+            display: none;
+        }
+        
+        .lobby-screen.active, .game-screen.active, .result-screen.active {
+            display: block;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 36px;
+            text-align: center;
+        }
+        
+        .room-code {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+            border: 3px dashed #667eea;
+        }
+        
+        .room-code-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .code {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 8px;
+        }
+        
+        .players-list {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .player-score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .player-status {
+            font-size: 12px;
+            color: #22c55e;
+        }
+        
+        .input-group {
+            margin: 20px 0;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px 0;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-3px);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .timer-bar-container {
+            width: 100%;
+            height: 15px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .timer-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #ef4444);
+            transition: width 0.1s linear;
+        }
+        
+        .question-card {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .question-number {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .question-text {
+            font-size: 24px;
+            color: #333;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+        
+        .answers {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .answer-btn {
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            text-align: left;
+        }
+        
+        .answer-btn:hover:not(.correct):not(.wrong):not(.disabled) {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateX(5px);
+        }
+        
+        .answer-btn.correct {
+            border-color: #22c55e;
+            background: #dcfce7;
+        }
+        
+        .answer-btn.wrong {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+        
+        .answer-btn.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .leaderboard {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .rank {
+            font-size: 24px;
+            font-weight: bold;
+            width: 40px;
+        }
+        
+        .rank.first { color: #fbbf24; }
+        .rank.second { color: #9ca3af; }
+        .rank.third { color: #cd7f32; }
+        
+        .waiting {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        
+        .info-box {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Lobby Screen -->
+        <div class="lobby-screen active" id="lobbyScreen">
+            <h1>🎯 Kuis Trivia Multiplayer</h1>
+            
+            <div class="input-group">
+                <input type="text" id="playerName" placeholder="Masukkan nama kamu" maxlength="15">
+                <button class="btn" onclick="createRoom()">🎮 Buat Room Baru</button>
+                <button class="btn btn-secondary" onclick="showJoinRoom()">🚪 Join Room</button>
+            </div>
+            
+            <div id="joinRoomSection" style="display: none;">
+                <input type="text" id="roomCodeInput" placeholder="Masukkan kode room" maxlength="6">
+                <button class="btn" onclick="joinRoom()">Join</button>
+            </div>
+            
+            <div class="info-box">
+                💡 <strong>Cara main:</strong> Buat room atau join room teman, tunggu semua siap, lalu mulai kuis!
+            </div>
+        </div>
+        
+        <!-- Waiting Room -->
+        <div class="lobby-screen" id="waitingRoom">
+            <h1>🎮 Ruang Tunggu</h1>
+            
+            <div class="room-code">
+                <div class="room-code-label">Kode Room:</div>
+                <div class="code" id="displayRoomCode">XXXX</div>
+                <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                    Bagikan kode ini ke teman-teman!
+                </div>
+            </div>
+            
+            <div class="players-list">
+                <h3 style="margin-bottom: 15px; color: #667eea;">👥 Pemain (<span id="playerCount">0</span>)</h3>
+                <div id="playersList"></div>
+            </div>
+            
+            <button class="btn" onclick="startGame()" id="startBtn">🚀 Mulai Kuis</button>
+            <button class="btn btn-secondary" onclick="leaveRoom()">🚪 Keluar Room</button>
+        </div>
+        
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="players-list" style="margin-bottom: 20px;">
+                <div id="gamePlayersList"></div>
+            </div>
+            
+            <div class="timer-bar-container">
+                <div class="timer-bar" id="timerBar"></div>
+            </div>
+            
+            <div class="question-card">
+                <div class="question-number" id="questionNum"></div>
+                <div class="question-text" id="questionText"></div>
+            </div>
+            
+            <div class="answers" id="answers"></div>
+            
+            <div class="waiting" id="waitingOthers" style="display: none;">
+                ⏳ Menunggu pemain lain menjawab...
+            </div>
+        </div>
+        
+        <!-- Result Screen -->
+        <div class="result-screen" id="resultScreen">
+            <h1>🏆 Hasil Akhir</h1>
+            
+            <div class="leaderboard" id="leaderboard"></div>
+            
+            <button class="btn" onclick="location.reload()">🔄 Main Lagi</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {q: "Apa ibu kota Indonesia?", a: ["Jakarta", "Bandung", "Surabaya", "Medan"], correct: 0},
+            {q: "Planet terbesar di tata surya?", a: ["Jupiter", "Saturnus", "Mars", "Bumi"], correct: 0},
+            {q: "Berapa benua di dunia?", a: ["7", "5", "6", "8"], correct: 0},
+            {q: "Mata uang Jepang adalah?", a: ["Yen", "Won", "Yuan", "Rupee"], correct: 0},
+            {q: "Rumus air adalah?", a: ["H2O", "CO2", "O2", "H2SO4"], correct: 0},
+            {q: "Presiden pertama Indonesia?", a: ["Soekarno", "Soeharto", "Habibie", "Megawati"], correct: 0},
+            {q: "Jumlah pemain sepak bola per tim?", a: ["11", "10", "12", "9"], correct: 0},
+            {q: "Perang Dunia II berakhir tahun?", a: ["1945", "1944", "1946", "1943"], correct: 0},
+            {q: "Negara dengan populasi terbesar?", a: ["India", "China", "Amerika", "Indonesia"], correct: 0},
+            {q: "Samudra terbesar di dunia?", a: ["Pasifik", "Atlantik", "Hindia", "Arktik"], correct: 0},
+        ];
+        
+        let gameState = {
+            roomCode: '',
+            playerName: '',
+            players: {},
+            isHost: false,
+            currentQuestion: 0,
+            hasAnswered: false,
+            myScore: 0
+        };
+        
+        let timer;
+        let timeLeft = 15;
+        
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+        
+        function showJoinRoom() {
+            document.getElementById('joinRoomSection').style.display = 'block';
+        }
+        
+        function createRoom() {
+            const name = document.getElementById('playerName').value.trim();
+            if (!name) {
+                alert('Masukkan nama kamu dulu!');
+                return;
+            }
+            
+            gameState.roomCode = generateRoomCode();
+            gameState.playerName = name;
+            gameState.isHost = true;
+            gameState.players[name] = { name: name, score: 0, ready: true };
+            
+            showWaitingRoom();
+        }
+        
+        function joinRoom() {
+            const name = document.getElementById('playerName').value.trim();
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            
+            if (!name || !code) {
+                alert('Masukkan nama dan kode room!');
+                return;
+            }
+            
+            gameState.roomCode = code;
+            gameState.playerName = name;
+            gameState.isHost = false;
+            gameState.players[name] = { name: name, score: 0, ready: true };
+            
+            // Simulasi join (dalam real app, ini akan sync dengan server)
+            showWaitingRoom();
+        }
+        
+        function showWaitingRoom() {
+            document.getElementById('lobbyScreen').classList.remove('active');
+            document.getElementById('waitingRoom').classList.add('active');
+            document.getElementById('displayRoomCode').textContent = gameState.roomCode;
+            
+            updatePlayersList();
+            
+            // Simulasi pemain lain join (untuk demo)
+            setTimeout(() => {
+                const botNames = ['Alex', 'Sarah', 'Mike'];
+                const randomBot = botNames[Math.floor(Math.random() * botNames.length)];
+                if (!gameState.players[randomBot]) {
+                    gameState.players[randomBot] = { name: randomBot, score: 0, ready: true };
+                    updatePlayersList();
+                }
+            }, 3000);
+        }
+        
+        function updatePlayersList() {
+            const list = document.getElementById('playersList');
+            list.innerHTML = '';
+            
+            let count = 0;
+            for (let playerName in gameState.players) {
+                count++;
+                const player = gameState.players[playerName];
+                const div = document.createElement('div');
+                div.className = 'player-item';
+                div.innerHTML = `
+                    <div>
+                        <div class="player-name">${player.name} ${playerName === gameState.playerName ? '(Kamu)' : ''}</div>
+                        <div class="player-status">✓ Siap</div>
+                    </div>
+                    <div class="player-score">${player.score}</div>
+                `;
+                list.appendChild(div);
+            }
+            
+            document.getElementById('playerCount').textContent = count;
+            
+            if (!gameState.isHost) {
+                document.getElementById('startBtn').style.display = 'none';
+            }
+        }
+        
+        function updateGamePlayersList() {
+            const list = document.getElementById('gamePlayersList');
+            list.innerHTML = '';
+            
+            const sortedPlayers = Object.values(gameState.players).sort((a, b) => b.score - a.score);
+            
+            sortedPlayers.forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player-item';
+                div.innerHTML = `
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-score">${player.score}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        function leaveRoom() {
+            location.reload();
+        }
+        
+        function startGame() {
+            document.getElementById('waitingRoom').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            
+            gameState.currentQuestion = 0;
+            loadQuestion();
+        }
+        
+        function loadQuestion() {
+            if (gameState.currentQuestion >= questions.length) {
+                endGame();
+                return;
+            }
+            
+            gameState.hasAnswered = false;
+            const q = questions[gameState.currentQuestion];
+            
+            document.getElementById('questionNum').textContent = `Soal ${gameState.currentQuestion + 1}/${questions.length}`;
+            document.getElementById('questionText').textContent = q.q;
+            document.getElementById('waitingOthers').style.display = 'none';
+            
+            const answersDiv = document.getElementById('answers');
+            answersDiv.innerHTML = '';
+            
+            q.a.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer;
+                btn.onclick = () => selectAnswer(index);
+                answersDiv.appendChild(btn);
+            });
+            
+            updateGamePlayersList();
+            startTimer();
+        }
+        
+        function startTimer() {
+            timeLeft = 15;
+            updateTimerBar();
+            
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerBar();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    if (!gameState.hasAnswered) {
+                        selectAnswer(-1);
+                    }
+                }
+            }, 1000);
+        }
+        
+        function updateTimerBar() {
+            const percentage = (timeLeft / 15) * 100;
+            document.getElementById('timerBar').style.width = percentage + '%';
+        }
+        
+        function selectAnswer(selected) {
+            if (gameState.hasAnswered) return;
+            
+            clearInterval(timer);
+            gameState.hasAnswered = true;
+            
+            const q = questions[gameState.currentQuestion];
+            const buttons = document.querySelectorAll('.answer-btn');
+            
+            buttons.forEach(btn => btn.classList.add('disabled'));
+            
+            if (selected === q.correct) {
+                buttons[selected].classList.add('correct');
+                const points = Math.max(10, timeLeft * 10);
+                gameState.myScore += points;
+                gameState.players[gameState.playerName].score += points;
+            } else {
+                if (selected >= 0) {
+                    buttons[selected].classList.add('wrong');
+                }
+                buttons[q.correct].classList.add('correct');
+            }
+            
+            // Simulasi bot menjawab
+            for (let playerName in gameState.players) {
+                if (playerName !== gameState.playerName) {
+                    const botScore = Math.floor(Math.random() * 150) + 10;
+                    gameState.players[playerName].score += botScore;
+                }
+            }
+            
+            updateGamePlayersList();
+            
+            document.getElementById('waitingOthers').style.display = 'block';
+            
+            setTimeout(() => {
+                gameState.currentQuestion++;
+                loadQuestion();
+            }, 3000);
+        }
+        
+        function endGame() {
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('resultScreen').classList.add('active');
+            
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '';
+            
+            const sortedPlayers = Object.values(gameState.players).sort((a, b) => b.score - a.score);
+            
+            sortedPlayers.forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item';
+                
+                let rankClass = '';
+                let rankEmoji = '';
+                if (index === 0) {
+                    rankClass = 'first';
+                    rankEmoji = '🥇';
+                } else if (index === 1) {
+                    rankClass = 'second';
+                    rankEmoji = '🥈';
+                } else if (index === 2) {
+                    rankClass = 'third';
+                    rankEmoji = '🥉';
+                } else {
+                    rankEmoji = `#${index + 1}`;
+                }
+                
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="rank ${rankClass}">${rankEmoji}</div>
+                        <div class="player-name">${player.name} ${player.name === gameState.playerName ? '(Kamu)' : ''}</div>
+                    </div>
+                    <div class="player-score">${player.score}</div>
+                `;
+                leaderboard.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
